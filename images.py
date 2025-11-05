@@ -1,7 +1,9 @@
-# DALL-E 3 requires version 1.0.0 or later of the openai-python library.
-import os
+from flask import Flask, request, jsonify
 from openai import AzureOpenAI
+import os
 import json
+
+app = Flask(__name__)
 
 # You will need to set these environment variables or edit the following values.
 endpoint = os.getenv("AZURE_OPENAI_ENDPOINT", "https://aifoundry700.cognitiveservices.azure.com/")
@@ -15,13 +17,24 @@ client = AzureOpenAI(
     api_key=api_key,
 )
 
-result = client.images.generate(
-    model=deployment,
-    prompt="<IMAGE_PROMPT>",
-    n=1
-    style="vivid",
-    quality="standard",
-)
+@app.route('/generate_image', methods=['POST'])
+def generate_image():
+    prompt = request.json.get('prompt')
+    if not prompt:
+        return jsonify({"error": "Prompt is required"}), 400
 
-image_url = json.loads(result.model_dump_json())['data'][0]['url']
-print(image_url)
+    try:
+        result = client.images.generate(
+            model=deployment,
+            prompt=prompt,
+            n=1,
+            style="vivid",
+            quality="standard",
+        )
+        image_url = json.loads(result.model_dump_json())['data'][0]['url']
+        return jsonify({"image_url": image_url})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
