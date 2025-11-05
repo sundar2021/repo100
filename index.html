@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DALL-E 3 Image Generator</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #image-container img { max-width: 100%; height: auto; margin-top: 20px; border: 1px solid #ccc; }
+        #loading { display: none; color: blue; }
+        #error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Generate Image with DALL-E 3</h1>
+
+    <form id="image-generation-form">
+        <label for="prompt">Image Prompt:</label><br>
+        <textarea id="prompt" name="prompt" rows="4" cols="50" required></textarea><br><br>
+        <button type="submit">Generate Image</button>
+    </form>
+
+    <p id="loading">Generating image, please wait...</p>
+    <p id="error"></p>
+
+    <div id="image-container">
+        <!-- Generated image will be displayed here -->
+    </div>
+
+    <script>
+        document.getElementById('image-generation-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const prompt = document.getElementById('prompt').value;
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+            const imageContainer = document.getElementById('image-container');
+
+            loadingElement.style.display = 'block';
+            errorElement.textContent = '';
+            imageContainer.innerHTML = ''; // Clear previous image
+
+            try {
+                const response = await fetch('/generate_image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const imageUrl = data.image_url;
+                    const imgElement = document.createElement('img');
+                    imgElement.src = imageUrl;
+                    imgElement.alt = "Generated Image";
+                    imageContainer.appendChild(imgElement);
+                } else {
+                    errorElement.textContent = `Error: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                errorElement.textContent = `Network error: ${error.message}`;
+            } finally {
+                loadingElement.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
